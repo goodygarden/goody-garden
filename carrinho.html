@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Carrinho — Goody Garden</title>
+  <link rel="stylesheet" href="global.css"/>
+  <style>
+    .carrinho-wrapper { display:grid; grid-template-columns:1fr 360px; gap:28px; padding:32px 80px 72px; }
+    .carrinho-items { }
+    .carrinho-titulo { font-size:1.5rem; font-weight:800; color:var(--verde-escuro); margin-bottom:24px; }
+    .item-card { display:grid; grid-template-columns:80px 1fr auto; gap:16px; align-items:center; background:white; border-radius:var(--radius); padding:16px 20px; border:1px solid rgba(0,0,0,.06); margin-bottom:12px; }
+    .item-emoji { width:80px; height:80px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:2.5rem; }
+    .item-nome { font-size:.95rem; font-weight:700; color:var(--texto); margin-bottom:4px; }
+    .item-cat { font-size:.73rem; color:var(--verde); text-transform:uppercase; letter-spacing:.06em; font-weight:600; margin-bottom:8px; }
+    .item-qtd { display:flex; align-items:center; gap:0; border:1.5px solid #dde8dd; border-radius:50px; width:fit-content; }
+    .iq-btn { background:none; border:none; width:32px; height:32px; font-size:1rem; cursor:pointer; color:var(--verde); }
+    .iq-val { width:32px; text-align:center; font-weight:700; font-size:.88rem; }
+    .item-preco { text-align:right; }
+    .item-preco-val { font-size:1.1rem; font-weight:700; color:var(--verde-escuro); }
+    .item-remove { font-size:.75rem; color:#e53935; background:none; border:none; cursor:pointer; margin-top:6px; display:block; }
+    /* Resumo */
+    .resumo { background:white; border-radius:var(--radius); padding:24px; border:1px solid rgba(0,0,0,.06); height:fit-content; position:sticky; top:88px; }
+    .resumo-titulo { font-size:1.1rem; font-weight:800; color:var(--verde-escuro); margin-bottom:20px; }
+    .resumo-linha { display:flex; justify-content:space-between; font-size:.87rem; padding:8px 0; border-bottom:1px solid var(--cinza-suave); }
+    .resumo-linha:last-of-type { border-bottom:none; }
+    .resumo-total { display:flex; justify-content:space-between; font-size:1.1rem; font-weight:800; padding:14px 0 0; color:var(--verde-escuro); }
+    .frete-gratis { color:var(--verde); font-weight:600; }
+    .resumo-cta { margin-top:16px; display:flex; flex-direction:column; gap:10px; }
+    .cupom-row { display:flex; gap:8px; margin:14px 0; }
+    .cupom-row input { flex:1; padding:10px 14px; border:1.5px solid #dde8dd; border-radius:50px; font-family:'Poppins',sans-serif; font-size:.83rem; outline:none; }
+    .cupom-row input:focus { border-color:var(--verde); }
+    .cupom-row button { background:var(--cinza-suave); color:var(--verde); border:none; border-radius:50px; padding:10px 16px; font-family:'Poppins',sans-serif; font-weight:600; font-size:.8rem; cursor:pointer; }
+    .vazio-cart { text-align:center; padding:80px 20px; }
+    .vazio-cart .emoji { font-size:4rem; margin-bottom:16px; }
+    .vazio-cart h2 { font-size:1.3rem; font-weight:700; margin-bottom:8px; }
+    .vazio-cart p { color:var(--cinza-txt); margin-bottom:24px; font-size:.9rem; }
+    .frete-barra { background:var(--cinza-suave); border-radius:8px; height:6px; margin:12px 0 4px; overflow:hidden; }
+    .frete-prog { background:var(--verde); height:100%; border-radius:8px; transition:width .5s; }
+    .frete-msg { font-size:.75rem; color:var(--cinza-txt); }
+    @media(max-width:900px){ .carrinho-wrapper{grid-template-columns:1fr;padding:24px;} .resumo{position:static;} }
+  </style>
+</head>
+<body>
+  <div id="navbarContainer"></div>
+  <div style="padding:84px 80px 0;background:var(--offwhite)">
+    <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><span>Carrinho</span></div>
+  </div>
+
+  <div class="carrinho-wrapper">
+    <div>
+      <div class="carrinho-titulo">Meu Carrinho <span id="qtdLabel" style="font-size:1rem;font-weight:400;color:var(--cinza-txt)"></span></div>
+      <div id="carrinhoItems"></div>
+    </div>
+    <div>
+      <div class="resumo" id="resumoBox">
+        <div class="resumo-titulo">Resumo do pedido</div>
+        <div id="resumoLinhas"></div>
+        <div class="cupom-row"><input type="text" id="cupomInput" placeholder="Cupom de desconto"><button onclick="aplicarCupom()">Aplicar</button></div>
+        <div class="resumo-total"><span>Total</span><span id="resumoTotal">R$ 0,00</span></div>
+        <div class="resumo-cta">
+          <button class="btn-primary btn-full" onclick="window.location.href='pagamento.html'">Finalizar compra →</button>
+          <a href="loja.html" class="btn-secondary btn-full" style="justify-content:center">Continuar comprando</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="footerContainer"></div>
+  <script src="data.js"></script><script src="global.js"></script>
+  <script>
+    document.getElementById('navbarContainer').innerHTML = renderNavbar('carrinho.html');
+    document.getElementById('footerContainer').innerHTML = renderFooter();
+    initNavbar();
+
+    let desconto = 0;
+    const CUPONS = { 'GOODY10': 0.10, 'PLANTA20': 0.20 };
+
+    function renderCarrinho() {
+      const carrinho = getCarrinho();
+      const produtos = getProdutos();
+      const container = document.getElementById('carrinhoItems');
+      document.getElementById('qtdLabel').textContent = `(${qtdCarrinho()} itens)`;
+
+      if (!carrinho.length) {
+        container.innerHTML = `<div class="vazio-cart"><div class="emoji">🛒</div><h2>Seu carrinho está vazio</h2><p>Adicione produtos incríveis para continuar.</p><a href="loja.html" class="btn-primary">Ver produtos →</a></div>`;
+        document.getElementById('resumoLinhas').innerHTML = '';
+        document.getElementById('resumoTotal').textContent = 'R$ 0,00';
+        return;
+      }
+
+      container.innerHTML = carrinho.map(item => {
+        const p = produtos.find(x => x.id === item.id);
+        if (!p) return '';
+        return `<div class="item-card">
+          <div class="item-emoji" style="background:${p.bg}">${p.emoji}</div>
+          <div>
+            <div class="item-cat">${getCategorias().find(c=>c.id===p.categoria)?.nome||''}</div>
+            <div class="item-nome">${p.nome}</div>
+            <div class="item-qtd">
+              <button class="iq-btn" onclick="mudarQtd(${p.id},-1)">−</button>
+              <span class="iq-val">${item.qtd}</span>
+              <button class="iq-btn" onclick="mudarQtd(${p.id},1)">+</button>
+            </div>
+          </div>
+          <div class="item-preco">
+            <div class="item-preco-val">${formatPreco(p.preco * item.qtd)}</div>
+            <div style="font-size:.73rem;color:var(--cinza-txt)">${formatPreco(p.preco)} cada</div>
+            <button class="item-remove" onclick="remover(${p.id})">Remover</button>
+          </div>
+        </div>`;
+      }).join('');
+
+      // Resumo
+      const subtotal = totalCarrinho();
+      const frete = subtotal >= GOODY.site.frete_gratis_acima ? 0 : 19.90;
+      const desc = subtotal * desconto;
+      const total = subtotal - desc + frete;
+      const pct = Math.min(100, (subtotal / GOODY.site.frete_gratis_acima) * 100);
+      const faltam = Math.max(0, GOODY.site.frete_gratis_acima - subtotal);
+
+      document.getElementById('resumoLinhas').innerHTML = `
+        <div class="resumo-linha"><span>Subtotal</span><span>${formatPreco(subtotal)}</span></div>
+        ${desconto ? `<div class="resumo-linha" style="color:var(--verde)"><span>Desconto (${desconto*100}%)</span><span>-${formatPreco(desc)}</span></div>` : ''}
+        <div class="resumo-linha"><span>Frete</span><span class="${frete===0?'frete-gratis':''}">${frete===0?'Grátis':formatPreco(frete)}</span></div>
+        ${faltam > 0 ? `<div style="padding:8px 0"><div class="frete-msg">Faltam <strong>${formatPreco(faltam)}</strong> para frete grátis!</div><div class="frete-barra"><div class="frete-prog" style="width:${pct}%"></div></div></div>` : `<div class="frete-msg" style="color:var(--verde);font-weight:600;padding:4px 0">🎉 Você ganhou frete grátis!</div>`}`;
+      document.getElementById('resumoTotal').textContent = formatPreco(total);
+    }
+
+    function mudarQtd(id, delta) {
+      const c = getCarrinho(); const idx = c.findIndex(i=>i.id===id);
+      if (idx>=0) { c[idx].qtd = Math.max(1, c[idx].qtd+delta); saveCarrinho(c); renderCarrinho(); }
+    }
+    function remover(id) { removeCarrinho(id); renderCarrinho(); }
+    function aplicarCupom() {
+      const cod = document.getElementById('cupomInput').value.toUpperCase();
+      if (CUPONS[cod]) { desconto = CUPONS[cod]; showToast(`✅ Cupom ${cod} aplicado! ${desconto*100}% de desconto`); renderCarrinho(); }
+      else showToast('❌ Cupom inválido', 'erro');
+    }
+    window.mudarQtd=mudarQtd; window.remover=remover;
+    renderCarrinho();
+  </script>
+</body>
+</html>

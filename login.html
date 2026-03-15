@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Entrar — Goody Garden</title>
+  <link rel="stylesheet" href="global.css"/>
+  <style>
+    .login-page { min-height:100vh; display:grid; grid-template-columns:1fr 1fr; padding-top:68px; }
+    .login-visual { background:var(--verde-escuro); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
+    .login-visual-bg { position:absolute; inset:0; background:radial-gradient(ellipse at 60% 40%, #2E7D32, #0d3a12); }
+    .login-visual-dots { position:absolute; inset:0; opacity:.1; background-image:radial-gradient(circle,#fff 1px,transparent 1px); background-size:28px 28px; }
+    .login-visual-inner { position:relative; z-index:2; text-align:center; color:white; padding:40px; }
+    .login-visual-emoji { font-size:6rem; animation:float 4s ease-in-out infinite; margin-bottom:24px; }
+    .login-visual-titulo { font-size:1.8rem; font-weight:800; margin-bottom:10px; }
+    .login-visual-sub { opacity:.65; font-size:.9rem; line-height:1.7; max-width:320px; }
+    .login-benefits { list-style:none; margin-top:24px; display:flex; flex-direction:column; gap:10px; }
+    .login-benefits li { display:flex; align-items:center; gap:10px; font-size:.85rem; opacity:.8; }
+    .login-form-area { display:flex; align-items:center; justify-content:center; padding:40px; background:var(--offwhite); }
+    .login-box { background:white; border-radius:24px; padding:40px; width:100%; max-width:420px; box-shadow:var(--shadow); }
+    .login-box-titulo { font-size:1.4rem; font-weight:800; color:var(--verde-escuro); margin-bottom:4px; }
+    .login-box-sub { font-size:.85rem; color:var(--cinza-txt); margin-bottom:28px; }
+    .tab-switch { display:flex; background:var(--cinza-suave); border-radius:50px; padding:4px; margin-bottom:24px; }
+    .tab-switch button { flex:1; padding:9px; border:none; border-radius:50px; background:none; font-family:'Poppins',sans-serif; font-size:.84rem; font-weight:600; cursor:pointer; color:var(--cinza-txt); transition:all .2s; }
+    .tab-switch button.ativo { background:white; color:var(--verde-escuro); box-shadow:0 2px 8px rgba(0,0,0,.08); }
+    .login-form, .cadastro-form { }
+    .cadastro-form { display:none; }
+    .divider { display:flex; align-items:center; gap:12px; margin:16px 0; }
+    .divider::before, .divider::after { content:''; flex:1; height:1px; background:#eee; }
+    .divider span { font-size:.75rem; color:var(--cinza-txt); }
+    .btn-social { width:100%; padding:11px; border:1.5px solid #dde8dd; border-radius:12px; background:white; font-family:'Poppins',sans-serif; font-size:.85rem; font-weight:600; cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px; }
+    .btn-social:hover { border-color:var(--verde); background:var(--cinza-suave); }
+    .link-forgot { font-size:.78rem; color:var(--verde); text-decoration:none; float:right; margin-top:-12px; margin-bottom:16px; display:block; }
+    .link-forgot:hover { text-decoration:underline; }
+    .login-footer-txt { font-size:.78rem; color:var(--cinza-txt); text-align:center; margin-top:16px; }
+    .login-footer-txt a { color:var(--verde); text-decoration:none; font-weight:600; }
+    @media(max-width:900px){ .login-page{grid-template-columns:1fr;} .login-visual{display:none;} .login-form-area{padding:24px;min-height:calc(100vh - 68px);} }
+  </style>
+</head>
+<body>
+  <div id="navbarContainer"></div>
+
+  <div class="login-page">
+    <div class="login-visual">
+      <div class="login-visual-bg"></div>
+      <div class="login-visual-dots"></div>
+      <div class="login-visual-inner">
+        <div class="login-visual-emoji">🌱</div>
+        <div class="login-visual-titulo">Bem-vindo de volta!</div>
+        <p class="login-visual-sub">Acesse sua conta para gerenciar seus pedidos e favoritos.</p>
+        <ul class="login-benefits">
+          <li>✅ Acompanhe seus pedidos em tempo real</li>
+          <li>✅ Salve seus produtos favoritos</li>
+          <li>✅ Ofertas exclusivas para membros</li>
+          <li>✅ Suporte prioritário</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="login-form-area">
+      <div class="login-box">
+        <div class="login-box-titulo">Minha conta</div>
+        <p class="login-box-sub">Cuidar das plantas ficou mais fácil.</p>
+
+        <div class="tab-switch">
+          <button class="ativo" id="tabEntrar" onclick="showTab('entrar')">Entrar</button>
+          <button id="tabCadastrar" onclick="showTab('cadastrar')">Criar conta</button>
+        </div>
+
+        <!-- LOGIN -->
+        <div class="login-form" id="formEntrar">
+          <div class="form-group"><label>E-mail</label><input type="email" id="loginEmail" placeholder="seu@email.com"/></div>
+          <div class="form-group"><label>Senha</label><input type="password" id="loginSenha" placeholder="••••••••"/></div>
+          <a href="#" class="link-forgot">Esqueci minha senha</a>
+          <button class="btn-primary btn-full" style="margin-top:8px" onclick="fazerLogin()">Entrar na conta →</button>
+          <div class="divider"><span>ou continue com</span></div>
+          <button class="btn-social">🌐 Entrar com Google</button>
+          <div class="login-footer-txt">Não tem conta? <a href="#" onclick="showTab('cadastrar')">Criar agora</a></div>
+          <div class="login-footer-txt" style="margin-top:8px">
+            Admin? <a href="#" onclick="loginAdmin()">Acesso administrativo</a>
+          </div>
+        </div>
+
+        <!-- CADASTRO -->
+        <div class="cadastro-form" id="formCadastrar">
+          <div class="form-group"><label>Nome completo</label><input type="text" id="cadNome" placeholder="Seu nome"/></div>
+          <div class="form-group"><label>E-mail</label><input type="email" id="cadEmail" placeholder="seu@email.com"/></div>
+          <div class="form-group"><label>Senha</label><input type="password" id="cadSenha" placeholder="Mínimo 6 caracteres"/></div>
+          <div class="form-group"><label>Confirmar senha</label><input type="password" id="cadSenha2" placeholder="Repita a senha"/></div>
+          <button class="btn-primary btn-full" style="margin-top:4px" onclick="fazerCadastro()">Criar minha conta →</button>
+          <div class="login-footer-txt">Já tem conta? <a href="#" onclick="showTab('entrar')">Entrar</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script><script src="global.js"></script>
+  <script>
+    document.getElementById('navbarContainer').innerHTML = renderNavbar('login.html');
+    initNavbar();
+
+    // Redirecionar se já logado
+    if (getUsuario()) window.location.href = 'index.html';
+
+    function showTab(tab) {
+      document.getElementById('formEntrar').style.display = tab==='entrar' ? 'block' : 'none';
+      document.getElementById('formCadastrar').style.display = tab==='cadastrar' ? 'block' : 'none';
+      document.getElementById('tabEntrar').classList.toggle('ativo', tab==='entrar');
+      document.getElementById('tabCadastrar').classList.toggle('ativo', tab==='cadastrar');
+    }
+
+    function fazerLogin() {
+      const email = document.getElementById('loginEmail').value;
+      const senha = document.getElementById('loginSenha').value;
+      if (!email || !senha) { showToast('❌ Preencha e-mail e senha', 'erro'); return; }
+      // Verificar admin
+      if (email === GOODY.admin.usuario && senha === GOODY.admin.senha) {
+        setUsuario({ nome: 'Admin', email, role: 'admin' });
+        showToast('✅ Bem-vindo, Admin!'); setTimeout(()=>window.location.href='admin.html', 800); return;
+      }
+      // Verificar usuário cadastrado
+      const usuarios = JSON.parse(localStorage.getItem('goody_usuarios') || '[]');
+      const user = usuarios.find(u => u.email===email && u.senha===senha);
+      if (user) { setUsuario({ nome: user.nome, email: user.email, role: 'cliente' }); showToast('✅ Login feito! Bem-vindo, ' + user.nome); setTimeout(()=>window.location.href='index.html', 800); }
+      else showToast('❌ E-mail ou senha incorretos', 'erro');
+    }
+
+    function fazerCadastro() {
+      const nome = document.getElementById('cadNome').value;
+      const email = document.getElementById('cadEmail').value;
+      const senha = document.getElementById('cadSenha').value;
+      const senha2 = document.getElementById('cadSenha2').value;
+      if (!nome||!email||!senha) { showToast('❌ Preencha todos os campos', 'erro'); return; }
+      if (senha !== senha2) { showToast('❌ As senhas não coincidem', 'erro'); return; }
+      if (senha.length < 6) { showToast('❌ Senha muito curta (mínimo 6 caracteres)', 'erro'); return; }
+      const usuarios = JSON.parse(localStorage.getItem('goody_usuarios') || '[]');
+      if (usuarios.find(u=>u.email===email)) { showToast('❌ E-mail já cadastrado', 'erro'); return; }
+      usuarios.push({ nome, email, senha });
+      localStorage.setItem('goody_usuarios', JSON.stringify(usuarios));
+      setUsuario({ nome, email, role: 'cliente' });
+      showToast('✅ Conta criada! Bem-vindo, ' + nome);
+      setTimeout(()=>window.location.href='index.html', 800);
+    }
+
+    function loginAdmin() {
+      document.getElementById('loginEmail').value = GOODY.admin.usuario;
+      document.getElementById('loginSenha').value = GOODY.admin.senha;
+      showToast('Credenciais de admin preenchidas!');
+    }
+
+    window.showTab=showTab; window.fazerLogin=fazerLogin; window.fazerCadastro=fazerCadastro; window.loginAdmin=loginAdmin;
+  </script>
+</body>
+</html>

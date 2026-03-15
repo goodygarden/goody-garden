@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — Goody Garden</title>
+  <link rel="stylesheet" href="global.css"/>
+  <style>
+    body { background:var(--offwhite); }
+    .admin-layout { display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 68px); padding-top:68px; }
+    /* Sidebar admin */
+    .admin-sidebar { background:var(--verde-escuro); padding:28px 0; position:sticky; top:68px; height:calc(100vh - 68px); overflow-y:auto; }
+    .admin-sidebar-logo { padding:0 20px 24px; color:white; }
+    .admin-sidebar-logo div { font-weight:800; font-size:1.1rem; }
+    .admin-sidebar-logo small { font-size:.72rem; opacity:.5; }
+    .admin-menu { list-style:none; }
+    .admin-menu li a { display:flex; align-items:center; gap:10px; padding:12px 20px; color:rgba(255,255,255,.55); text-decoration:none; font-size:.84rem; font-weight:500; transition:all .2s; cursor:pointer; }
+    .admin-menu li a:hover, .admin-menu li a.ativo { background:rgba(255,255,255,.1); color:white; }
+    .admin-menu li a.ativo { border-left:3px solid var(--amarelo); }
+    .admin-menu-sep { border:none; border-top:1px solid rgba(255,255,255,.08); margin:8px 0; }
+    .admin-logout { padding:20px; margin-top:auto; }
+    /* Main */
+    .admin-main { padding:32px; overflow-y:auto; }
+    .admin-page { display:none; }
+    .admin-page.ativo { display:block; }
+    .admin-titulo { font-size:1.4rem; font-weight:800; color:var(--verde-escuro); margin-bottom:24px; }
+    /* Cards stat */
+    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+    .stat-card { background:white; border-radius:var(--radius); padding:20px; border:1px solid rgba(0,0,0,.05); }
+    .stat-card-icon { font-size:1.8rem; margin-bottom:10px; }
+    .stat-card-val { font-size:1.6rem; font-weight:800; color:var(--verde-escuro); }
+    .stat-card-label { font-size:.75rem; color:var(--cinza-txt); margin-top:3px; }
+    .stat-card-trend { font-size:.73rem; color:var(--verde); font-weight:600; margin-top:6px; }
+    /* Tabela */
+    .admin-table-wrap { background:white; border-radius:var(--radius); border:1px solid rgba(0,0,0,.06); overflow:hidden; }
+    .admin-table-header { padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--cinza-suave); }
+    .admin-table-header h3 { font-size:.95rem; font-weight:700; color:var(--verde-escuro); }
+    table { width:100%; border-collapse:collapse; }
+    th { background:var(--offwhite); padding:10px 16px; text-align:left; font-size:.75rem; font-weight:700; color:var(--cinza-txt); text-transform:uppercase; letter-spacing:.06em; }
+    td { padding:12px 16px; font-size:.84rem; color:var(--texto); border-bottom:1px solid var(--cinza-suave); }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:var(--offwhite); }
+    /* Badges status */
+    .status { padding:3px 10px; border-radius:50px; font-size:.7rem; font-weight:700; }
+    .status-confirmado { background:#E8F5E9; color:#1B5E20; }
+    .status-enviado { background:#E3F2FD; color:#1565C0; }
+    .status-entregue { background:#F3E5F5; color:#6A1B9A; }
+    /* Form produto */
+    .prod-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .admin-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+    .btn-danger { background:#c62828; color:white; border:none; border-radius:50px; padding:8px 18px; font-family:'Poppins',sans-serif; font-size:.8rem; font-weight:600; cursor:pointer; transition:all .2s; }
+    .btn-danger:hover { background:#b71c1c; }
+    .btn-sm { padding:7px 14px; font-size:.78rem; }
+    /* Produto mini card */
+    .prod-admin-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px; }
+    .prod-admin-card { background:white; border-radius:12px; padding:14px; border:1px solid rgba(0,0,0,.06); display:flex; align-items:center; gap:12px; }
+    .prod-admin-emoji { width:48px; height:48px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.8rem; flex-shrink:0; }
+    .prod-admin-info { flex:1; min-width:0; }
+    .prod-admin-nome { font-size:.84rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .prod-admin-preco { font-size:.78rem; color:var(--verde); font-weight:600; }
+    .prod-admin-acoes { display:flex; gap:6px; }
+    /* Modal */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:white; border-radius:24px; padding:32px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; animation:fadeUp .3s ease; }
+    .modal-titulo { font-size:1.1rem; font-weight:800; color:var(--verde-escuro); margin-bottom:20px; }
+    .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+    @media(max-width:900px){ .admin-layout{grid-template-columns:1fr;} .admin-sidebar{display:none;} .stats-grid{grid-template-columns:1fr 1fr;} .prod-admin-grid{grid-template-columns:1fr 1fr;} .prod-form-grid{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+  <div id="navbarContainer"></div>
+
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-logo">
+        <div>🌱 Goody Admin</div>
+        <small id="adminNome">Carregando...</small>
+      </div>
+      <ul class="admin-menu">
+        <li><a onclick="showPage('dashboard')" class="ativo" id="menu-dashboard">📊 Dashboard</a></li>
+        <li><a onclick="showPage('produtos')" id="menu-produtos">📦 Produtos</a></li>
+        <li><a onclick="showPage('pedidos')" id="menu-pedidos">🛒 Pedidos</a></li>
+        <li><a onclick="showPage('usuarios')" id="menu-usuarios">👥 Usuários</a></li>
+        <hr class="admin-menu-sep">
+        <li><a href="index.html">🌐 Ver site</a></li>
+        <li><a onclick="logout()">🚪 Sair</a></li>
+      </ul>
+    </aside>
+
+    <!-- Main -->
+    <main class="admin-main">
+
+      <!-- DASHBOARD -->
+      <div class="admin-page ativo" id="page-dashboard">
+        <div class="admin-titulo">Dashboard</div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-card-icon">🛒</div><div class="stat-card-val" id="statPedidos">0</div><div class="stat-card-label">Pedidos</div><div class="stat-card-trend">↑ Este mês</div></div>
+          <div class="stat-card"><div class="stat-card-icon">💰</div><div class="stat-card-val" id="statReceita">R$ 0</div><div class="stat-card-label">Receita total</div><div class="stat-card-trend">↑ Crescendo</div></div>
+          <div class="stat-card"><div class="stat-card-icon">📦</div><div class="stat-card-val" id="statProdutos">0</div><div class="stat-card-label">Produtos ativos</div><div class="stat-card-trend">↑ No catálogo</div></div>
+          <div class="stat-card"><div class="stat-card-icon">👥</div><div class="stat-card-val" id="statUsuarios">0</div><div class="stat-card-label">Clientes</div><div class="stat-card-trend">↑ Cadastrados</div></div>
+        </div>
+
+        <div class="admin-table-wrap">
+          <div class="admin-table-header"><h3>Últimos pedidos</h3></div>
+          <table><thead><tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>Total</th><th>Status</th></tr></thead>
+          <tbody id="tabelaPedidos"></tbody></table>
+        </div>
+      </div>
+
+      <!-- PRODUTOS -->
+      <div class="admin-page" id="page-produtos">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div class="admin-titulo" style="margin:0">Produtos</div>
+          <button class="btn-primary btn-sm" onclick="abrirModalProduto()">+ Novo produto</button>
+        </div>
+        <div class="prod-admin-grid" id="prodAdminGrid"></div>
+      </div>
+
+      <!-- PEDIDOS -->
+      <div class="admin-page" id="page-pedidos">
+        <div class="admin-titulo">Pedidos</div>
+        <div class="admin-table-wrap">
+          <table><thead><tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Status</th><th>Ação</th></tr></thead>
+          <tbody id="tabelaPedidosCompleta"></tbody></table>
+        </div>
+      </div>
+
+      <!-- USUÁRIOS -->
+      <div class="admin-page" id="page-usuarios">
+        <div class="admin-titulo">Usuários cadastrados</div>
+        <div class="admin-table-wrap">
+          <table><thead><tr><th>Nome</th><th>E-mail</th><th>Tipo</th></tr></thead>
+          <tbody id="tabelaUsuarios"></tbody></table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- MODAL PRODUTO -->
+  <div class="modal-overlay" id="modalOverlay" onclick="fecharModal(event)">
+    <div class="modal">
+      <div class="modal-titulo" id="modalTitulo">Novo produto</div>
+      <input type="hidden" id="editId"/>
+      <div class="prod-form-grid">
+        <div class="form-group"><label>Nome</label><input id="fNome" placeholder="Nome do produto"/></div>
+        <div class="form-group"><label>Emoji</label><input id="fEmoji" placeholder="🌺"/></div>
+        <div class="form-group"><label>Preço (R$)</label><input id="fPreco" type="number" placeholder="89.90" step="0.01"/></div>
+        <div class="form-group"><label>Preço original (opcional)</label><input id="fPrecoDe" type="number" placeholder="110.00" step="0.01"/></div>
+        <div class="form-group"><label>Categoria</label>
+          <select id="fCategoria"></select>
+        </div>
+        <div class="form-group"><label>Badge (opcional)</label>
+          <select id="fBadge"><option value="">Nenhum</option><option>Novo</option><option>Popular</option><option>Kit</option></select>
+        </div>
+        <div class="form-group"><label>Estoque</label><input id="fEstoque" type="number" placeholder="10"/></div>
+        <div class="form-group"><label>Cor de fundo</label><input id="fBg" type="color" value="#E8F5E9"/></div>
+      </div>
+      <div class="form-group"><label>Descrição</label><textarea id="fDesc" placeholder="Descrição do produto..."></textarea></div>
+      <div class="form-group"><label>Cuidados</label><input id="fCuidados" placeholder="Rega semanal • Luz indireta"/></div>
+      <div class="modal-footer">
+        <button class="btn-secondary btn-sm" onclick="document.getElementById('modalOverlay').classList.remove('open')">Cancelar</button>
+        <button class="btn-primary btn-sm" onclick="salvarProduto()">Salvar produto</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script><script src="global.js"></script>
+  <script>
+    // Verificar acesso admin
+    if (!isAdmin()) { showToast('⛔ Acesso restrito. Faça login como admin.', 'erro'); setTimeout(()=>window.location.href='login.html', 1500); }
+
+    document.getElementById('navbarContainer').innerHTML = renderNavbar('admin.html');
+    initNavbar();
+    const u = getUsuario();
+    if (u) document.getElementById('adminNome').textContent = u.nome;
+
+    function showPage(id) {
+      document.querySelectorAll('.admin-page').forEach(p=>p.classList.remove('ativo'));
+      document.querySelectorAll('.admin-menu a').forEach(a=>a.classList.remove('ativo'));
+      document.getElementById('page-'+id).classList.add('ativo');
+      document.getElementById('menu-'+id).classList.add('ativo');
+      if (id==='dashboard') renderDashboard();
+      if (id==='produtos') renderProdutosAdmin();
+      if (id==='pedidos') renderPedidosAdmin();
+      if (id==='usuarios') renderUsuarios();
+    }
+
+    function renderDashboard() {
+      const pedidos = getPedidos();
+      const produtos = getProdutos();
+      const usuarios = JSON.parse(localStorage.getItem('goody_usuarios')||'[]');
+      const receita = pedidos.reduce((s,p)=>s+(p.total||0),0);
+      document.getElementById('statPedidos').textContent = pedidos.length;
+      document.getElementById('statReceita').textContent = formatPreco(receita);
+      document.getElementById('statProdutos').textContent = produtos.length;
+      document.getElementById('statUsuarios').textContent = usuarios.length;
+      document.getElementById('tabelaPedidos').innerHTML = pedidos.slice(0,6).map(p=>`
+        <tr><td><strong>${p.id}</strong></td><td>${p.data}</td>
+        <td>${p.endereco?.nome||'—'}</td><td>${formatPreco(p.total||0)}</td>
+        <td><span class="status status-confirmado">${p.status||'Confirmado'}</span></td></tr>`).join('') ||
+        '<tr><td colspan="5" style="text-align:center;color:var(--cinza-txt);padding:30px">Nenhum pedido ainda</td></tr>';
+    }
+
+    function renderProdutosAdmin() {
+      const cats = getCategorias();
+      document.getElementById('fCategoria').innerHTML = cats.map(c=>`<option value="${c.id}">${c.emoji} ${c.nome}</option>`).join('');
+      document.getElementById('prodAdminGrid').innerHTML = getProdutos().map(p=>`
+        <div class="prod-admin-card">
+          <div class="prod-admin-emoji" style="background:${p.bg}">${p.emoji}</div>
+          <div class="prod-admin-info">
+            <div class="prod-admin-nome">${p.nome}</div>
+            <div class="prod-admin-preco">${formatPreco(p.preco)}</div>
+            <div style="font-size:.7rem;color:var(--cinza-txt)">Estoque: ${p.estoque}</div>
+          </div>
+          <div class="prod-admin-acoes">
+            <button class="btn-secondary btn-sm" onclick="editarProduto(${p.id})">✏️</button>
+            <button class="btn-danger btn-sm" onclick="deletarProduto(${p.id})">🗑</button>
+          </div>
+        </div>`).join('');
+    }
+
+    function renderPedidosAdmin() {
+      document.getElementById('tabelaPedidosCompleta').innerHTML = getPedidos().map(p=>`
+        <tr><td><strong>${p.id}</strong></td><td>${p.data}</td>
+        <td>${p.endereco?.nome||'—'}</td>
+        <td>${(p.itens||[]).length} itens</td>
+        <td>${formatPreco(p.total||0)}</td>
+        <td><span class="status status-confirmado">${p.status||'Confirmado'}</span></td>
+        <td><select onchange="mudarStatus('${p.id}',this.value)" style="font-size:.75rem;border:1px solid #dde;border-radius:8px;padding:4px 8px">
+          <option>Confirmado</option><option>Enviado</option><option>Entregue</option>
+        </select></td></tr>`).join('') ||
+        '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--cinza-txt)">Nenhum pedido</td></tr>';
+    }
+
+    function renderUsuarios() {
+      const usuarios = JSON.parse(localStorage.getItem('goody_usuarios')||'[]');
+      document.getElementById('tabelaUsuarios').innerHTML = [
+        { nome:'Admin', email: GOODY.admin.usuario, role:'admin' },
+        ...usuarios.map(u=>({...u, role:'cliente'}))
+      ].map(u=>`<tr><td>${u.nome}</td><td>${u.email}</td><td><span class="status ${u.role==='admin'?'status-enviado':'status-confirmado'}">${u.role}</span></td></tr>`).join('');
+    }
+
+    function abrirModalProduto(id) {
+      document.getElementById('editId').value = '';
+      document.getElementById('modalTitulo').textContent = 'Novo produto';
+      ['fNome','fEmoji','fPreco','fPrecoDe','fDesc','fCuidados'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('fEstoque').value='10';
+      document.getElementById('fBg').value='#E8F5E9';
+      document.getElementById('fBadge').value='';
+      renderProdutosAdmin(); // garante que select de categoria está preenchido
+      setTimeout(()=>document.getElementById('modalOverlay').classList.add('open'), 50);
+    }
+
+    function editarProduto(id) {
+      const p = getProdutos().find(x=>x.id===id); if(!p) return;
+      document.getElementById('editId').value = id;
+      document.getElementById('modalTitulo').textContent = 'Editar produto';
+      document.getElementById('fNome').value = p.nome;
+      document.getElementById('fEmoji').value = p.emoji;
+      document.getElementById('fPreco').value = p.preco;
+      document.getElementById('fPrecoDe').value = p.preco_de||'';
+      document.getElementById('fCategoria').value = p.categoria;
+      document.getElementById('fBadge').value = p.badge||'';
+      document.getElementById('fEstoque').value = p.estoque;
+      document.getElementById('fBg').value = p.bg;
+      document.getElementById('fDesc').value = p.descricao;
+      document.getElementById('fCuidados').value = p.cuidados;
+      document.getElementById('modalOverlay').classList.add('open');
+    }
+
+    function salvarProduto() {
+      const nome = document.getElementById('fNome').value;
+      const preco = parseFloat(document.getElementById('fPreco').value);
+      if (!nome || !preco) { showToast('❌ Nome e preço são obrigatórios', 'erro'); return; }
+      const editId = document.getElementById('editId').value;
+      const produtos = getProdutos();
+      const novo = {
+        id: editId ? +editId : Date.now(),
+        nome, emoji: document.getElementById('fEmoji').value||'🌱',
+        preco, preco_de: parseFloat(document.getElementById('fPrecoDe').value)||null,
+        categoria: document.getElementById('fCategoria').value,
+        badge: document.getElementById('fBadge').value||null,
+        estoque: parseInt(document.getElementById('fEstoque').value)||10,
+        bg: document.getElementById('fBg').value,
+        descricao: document.getElementById('fDesc').value,
+        cuidados: document.getElementById('fCuidados').value,
+        avaliacao: 4.8, avaliacoes: 0, destaque: false
+      };
+      if (editId) { const idx=produtos.findIndex(p=>p.id===+editId); if(idx>=0) produtos[idx]=novo; }
+      else produtos.push(novo);
+      saveProdutos(produtos);
+      document.getElementById('modalOverlay').classList.remove('open');
+      showToast('✅ Produto salvo!');
+      renderProdutosAdmin();
+    }
+
+    function deletarProduto(id) {
+      if (!confirm('Deletar este produto?')) return;
+      saveProdutos(getProdutos().filter(p=>p.id!==id));
+      showToast('🗑 Produto removido'); renderProdutosAdmin();
+    }
+
+    function mudarStatus(pedidoId, status) {
+      const pedidos = getPedidos();
+      const idx = pedidos.findIndex(p=>p.id===pedidoId);
+      if (idx>=0) { pedidos[idx].status=status; localStorage.setItem('goody_pedidos',JSON.stringify(pedidos)); showToast('✅ Status atualizado'); }
+    }
+
+    function fecharModal(e) { if(e.target.id==='modalOverlay') document.getElementById('modalOverlay').classList.remove('open'); }
+
+    window.showPage=showPage; window.abrirModalProduto=abrirModalProduto;
+    window.editarProduto=editarProduto; window.salvarProduto=salvarProduto;
+    window.deletarProduto=deletarProduto; window.mudarStatus=mudarStatus; window.fecharModal=fecharModal;
+
+    renderDashboard();
+  </script>
+</body>
+</html>

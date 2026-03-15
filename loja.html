@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Loja — Goody Garden</title>
+  <link rel="stylesheet" href="global.css"/>
+  <style>
+    .loja-wrapper { display:grid; grid-template-columns:240px 1fr; gap:32px; padding:32px 80px 72px; }
+    /* Sidebar */
+    .sidebar { padding-top:0; }
+    .sidebar-section { background:white; border-radius:var(--radius); padding:20px; border:1px solid rgba(0,0,0,.06); margin-bottom:16px; }
+    .sidebar-titulo { font-size:.82rem; font-weight:700; color:var(--texto); margin-bottom:14px; text-transform:uppercase; letter-spacing:.06em; }
+    .filtro-cat { list-style:none; }
+    .filtro-cat li { margin-bottom:4px; }
+    .filtro-cat a { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-radius:10px; text-decoration:none; color:var(--cinza-txt); font-size:.84rem; transition:all .2s; }
+    .filtro-cat a:hover, .filtro-cat a.ativo { background:var(--cinza-suave); color:var(--verde); font-weight:600; }
+    .filtro-cat a .cat-count { background:var(--cinza-suave); color:var(--cinza-txt); border-radius:20px; padding:1px 8px; font-size:.7rem; }
+    .filtro-cat a.ativo .cat-count { background:var(--verde); color:white; }
+    .preco-range { width:100%; accent-color:var(--verde); margin:8px 0; }
+    .preco-vals { display:flex; justify-content:space-between; font-size:.78rem; color:var(--cinza-txt); }
+    /* Main */
+    .loja-main {}
+    .loja-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+    .loja-header h1 { font-size:1.5rem; font-weight:800; color:var(--verde-escuro); }
+    .loja-controls { display:flex; align-items:center; gap:12px; }
+    .loja-busca { display:flex; align-items:center; gap:8px; background:white; border:1.5px solid #dde8dd; border-radius:50px; padding:8px 16px; }
+    .loja-busca input { border:none; outline:none; font-family:'Poppins',sans-serif; font-size:.85rem; width:180px; color:var(--texto); }
+    .loja-sort { padding:9px 14px; border:1.5px solid #dde8dd; border-radius:50px; font-family:'Poppins',sans-serif; font-size:.83rem; color:var(--texto); outline:none; background:white; cursor:pointer; }
+    .loja-count { font-size:.8rem; color:var(--cinza-txt); }
+    .prod-grid-loja { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+    .vazio { text-align:center; padding:60px 20px; color:var(--cinza-txt); }
+    .vazio-emoji { font-size:3rem; margin-bottom:12px; }
+    .vazio h3 { font-size:1.1rem; font-weight:700; margin-bottom:8px; color:var(--texto); }
+    .tags-ativas { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+    .tag-ativa { background:var(--cinza-suave); color:var(--verde); border-radius:50px; padding:4px 12px; font-size:.75rem; font-weight:600; display:flex; align-items:center; gap:5px; }
+    .tag-ativa button { background:none; border:none; cursor:pointer; color:var(--verde); font-size:.9rem; padding:0; }
+    @media(max-width:900px){ .loja-wrapper{grid-template-columns:1fr;padding:24px;} .sidebar{display:none;} .prod-grid-loja{grid-template-columns:1fr 1fr;} }
+    @media(max-width:560px){ .prod-grid-loja{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+  <div id="navbarContainer"></div>
+
+  <div style="padding:84px 80px 0;background:var(--offwhite)">
+    <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><span>Loja</span></div>
+  </div>
+
+  <div style="background:var(--offwhite);padding:0 80px 24px">
+    <div class="loja-header">
+      <h1 id="lojaTitle">Todos os produtos</h1>
+      <div class="loja-controls">
+        <div class="loja-busca">🔍 <input type="text" id="busca" placeholder="Buscar produtos..." oninput="filtrar()"></div>
+        <select class="loja-sort" id="sortSelect" onchange="filtrar()">
+          <option value="relevancia">Relevância</option>
+          <option value="menor">Menor preço</option>
+          <option value="maior">Maior preço</option>
+          <option value="avaliacao">Melhor avaliação</option>
+        </select>
+      </div>
+    </div>
+    <div class="tags-ativas" id="tagsAtivas"></div>
+  </div>
+
+  <div class="loja-wrapper">
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-titulo">Categorias</div>
+        <ul class="filtro-cat" id="filtrosCat"></ul>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-titulo">Preço</div>
+        <input type="range" class="preco-range" id="precoRange" min="0" max="200" value="200" oninput="updatePreco(this)">
+        <div class="preco-vals"><span>R$ 0</span><span id="precoMax">R$ 200</span></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-titulo">Avaliação</div>
+        <ul class="filtro-cat" id="filtrosAval">
+          <li><a href="#" onclick="setAval(4.5);return false">★★★★★ 4.5+</a></li>
+          <li><a href="#" onclick="setAval(4);return false">★★★★☆ 4.0+</a></li>
+          <li><a href="#" onclick="setAval(0);return false">Todas</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <main>
+      <div class="loja-count" id="lojaCount"></div>
+      <div class="prod-grid-loja" id="prodGrid"></div>
+    </main>
+  </div>
+
+  <div id="footerContainer"></div>
+
+  <script src="data.js"></script><script src="global.js"></script>
+  <script>
+    document.getElementById('navbarContainer').innerHTML = renderNavbar('loja.html');
+    document.getElementById('footerContainer').innerHTML = renderFooter();
+    initNavbar();
+
+    let catAtiva = '', avalMin = 0, precoMaxVal = 200;
+
+    // Ler parâmetro de URL
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('cat')) catAtiva = params.get('cat');
+
+    // Montar filtros de categoria
+    function montarFiltros() {
+      const cats = getCategorias();
+      const produtos = getProdutos();
+      document.getElementById('filtrosCat').innerHTML = `
+        <li><a href="#" onclick="setCat('');return false" class="${!catAtiva?'ativo':''}">
+          Todos <span class="cat-count">${produtos.length}</span></a></li>` +
+        cats.map(c => `<li><a href="#" onclick="setCat('${c.id}');return false" class="${catAtiva===c.id?'ativo':''}">
+          ${c.emoji} ${c.nome} <span class="cat-count">${produtos.filter(p=>p.categoria===c.id).length}</span></a></li>`).join('');
+    }
+
+    function setCat(id) { catAtiva = id; montarFiltros(); filtrar(); }
+    function setAval(v) { avalMin = v; filtrar(); }
+    function updatePreco(el) { precoMaxVal = +el.value; document.getElementById('precoMax').textContent = 'R$ '+el.value; filtrar(); }
+
+    function filtrar() {
+      const busca = document.getElementById('busca').value.toLowerCase();
+      const sort = document.getElementById('sortSelect').value;
+      let prods = getProdutos().filter(p => {
+        const matchCat = !catAtiva || p.categoria === catAtiva;
+        const matchBusca = !busca || p.nome.toLowerCase().includes(busca) || p.descricao.toLowerCase().includes(busca);
+        const matchPreco = p.preco <= precoMaxVal;
+        const matchAval = p.avaliacao >= avalMin;
+        return matchCat && matchBusca && matchPreco && matchAval;
+      });
+      if (sort === 'menor') prods.sort((a,b) => a.preco - b.preco);
+      else if (sort === 'maior') prods.sort((a,b) => b.preco - a.preco);
+      else if (sort === 'avaliacao') prods.sort((a,b) => b.avaliacao - a.avaliacao);
+
+      const grid = document.getElementById('prodGrid');
+      document.getElementById('lojaCount').textContent = prods.length + ' produtos encontrados';
+      const catNome = catAtiva ? getCategorias().find(c=>c.id===catAtiva)?.nome : '';
+      document.getElementById('lojaTitle').textContent = catNome || 'Todos os produtos';
+
+      // Tags ativas
+      const tags = [];
+      if (catAtiva) tags.push({label: catNome, clear: ()=>setCat('')});
+      if (busca) tags.push({label: `"${busca}"`, clear: ()=>{document.getElementById('busca').value='';filtrar();}});
+      document.getElementById('tagsAtivas').innerHTML = tags.map((t,i) =>
+        `<span class="tag-ativa">${t.label} <button onclick="clearTag(${i})">×</button></span>`).join('');
+      window._tagClears = tags.map(t=>t.clear);
+
+      if (!prods.length) {
+        grid.innerHTML = `<div class="vazio" style="grid-column:1/-1"><div class="vazio-emoji">🌿</div><h3>Nenhum produto encontrado</h3><p>Tente outros filtros.</p></div>`;
+      } else {
+        grid.innerHTML = prods.map(p => renderCard(p)).join('');
+      }
+    }
+
+    function clearTag(i) { window._tagClears[i]?.(); }
+    montarFiltros(); filtrar();
+  </script>
+</body>
+</html>

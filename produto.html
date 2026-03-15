@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Produto — Goody Garden</title>
+  <link rel="stylesheet" href="global.css"/>
+  <style>
+    .prod-wrapper { display:grid; grid-template-columns:1fr 1fr; gap:56px; padding:32px 80px 72px; }
+    .prod-visual { }
+    .prod-img-main { border-radius:24px; background:#E8F5E9; height:420px; display:flex; align-items:center; justify-content:center; font-size:10rem; margin-bottom:12px; position:relative; }
+    .prod-thumbs { display:flex; gap:10px; }
+    .prod-thumb { width:70px; height:70px; border-radius:12px; background:var(--cinza-suave); display:flex; align-items:center; justify-content:center; font-size:2rem; cursor:pointer; border:2px solid transparent; transition:border .2s; }
+    .prod-thumb.ativo { border-color:var(--verde); }
+    .prod-detalhe { }
+    .prod-detalhe .prod-cat { font-size:.75rem; text-transform:uppercase; letter-spacing:.1em; color:var(--verde); font-weight:700; margin-bottom:8px; }
+    .prod-detalhe h1 { font-size:1.8rem; font-weight:800; color:var(--verde-escuro); margin-bottom:12px; line-height:1.2; letter-spacing:-.02em; }
+    .prod-aval-row { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+    .aval-estrelas { color:var(--amarelo); font-size:1rem; }
+    .aval-num { font-size:.85rem; color:var(--cinza-txt); }
+    .prod-preco-bloco { margin-bottom:20px; }
+    .prod-preco-de { font-size:.9rem; color:#bbb; text-decoration:line-through; }
+    .prod-preco-por { font-size:2rem; font-weight:800; color:var(--verde-escuro); line-height:1; margin-top:2px; }
+    .prod-parcela { font-size:.8rem; color:var(--cinza-txt); margin-top:4px; }
+    .prod-estoque { display:flex; align-items:center; gap:6px; font-size:.8rem; color:var(--verde); font-weight:600; margin-bottom:20px; }
+    .estoque-dot { width:8px; height:8px; background:var(--verde); border-radius:50%; }
+    .qtd-row { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+    .qtd-ctrl { display:flex; align-items:center; border:1.5px solid #dde8dd; border-radius:50px; overflow:hidden; }
+    .qtd-btn { background:none; border:none; width:36px; height:36px; font-size:1.1rem; cursor:pointer; color:var(--verde); transition:background .2s; }
+    .qtd-btn:hover { background:var(--cinza-suave); }
+    .qtd-val { width:40px; text-align:center; font-weight:700; font-size:.95rem; }
+    .prod-ctas { display:flex; flex-direction:column; gap:10px; margin-bottom:24px; }
+    .prod-info-tabs { border-top:1px solid var(--cinza-suave); padding-top:20px; }
+    .tabs-nav { display:flex; gap:0; border-bottom:1px solid var(--cinza-suave); margin-bottom:16px; }
+    .tab-btn { background:none; border:none; padding:10px 18px; font-family:'Poppins',sans-serif; font-size:.83rem; font-weight:600; color:var(--cinza-txt); cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; }
+    .tab-btn.ativo { color:var(--verde); border-bottom-color:var(--verde); }
+    .tab-content { font-size:.85rem; color:var(--cinza-txt); line-height:1.75; }
+    .tab-content.hidden { display:none; }
+    .cuidados-item { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--cinza-suave); font-size:.84rem; }
+    .cuidados-item:last-child { border-bottom:none; }
+    /* Relacionados */
+    .relacionados { padding:0 80px 72px; }
+    .prod-grid-rel { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:24px; }
+    @media(max-width:900px){ .prod-wrapper{grid-template-columns:1fr;padding:24px;} .prod-grid-rel{grid-template-columns:1fr 1fr;} .relacionados{padding:0 24px 52px;} }
+    @media(max-width:560px){ .prod-grid-rel{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+  <div id="navbarContainer"></div>
+  <div style="padding:84px 80px 0 80px;background:white"><div class="breadcrumb" id="breadcrumb"></div></div>
+
+  <div class="prod-wrapper" id="prodWrapper">
+    <div style="text-align:center;padding:60px;color:var(--cinza-txt)">Carregando...</div>
+  </div>
+
+  <div class="relacionados">
+    <div class="section-label">Você também pode gostar</div>
+    <h2 class="section-titulo">Produtos <em>relacionados</em></h2>
+    <div class="prod-grid-rel" id="gridRel"></div>
+  </div>
+
+  <div id="footerContainer"></div>
+
+  <script src="data.js"></script><script src="global.js"></script>
+  <script>
+    document.getElementById('navbarContainer').innerHTML = renderNavbar('loja.html');
+    document.getElementById('footerContainer').innerHTML = renderFooter();
+    initNavbar();
+
+    const id = +new URLSearchParams(window.location.search).get('id');
+    const prod = getProdutos().find(p => p.id === id);
+
+    if (!prod) {
+      document.getElementById('prodWrapper').innerHTML = `<div style="padding:60px;text-align:center"><h2>Produto não encontrado</h2><a href="loja.html" class="btn-primary" style="margin-top:20px;display:inline-flex">← Voltar à loja</a></div>`;
+    } else {
+      document.title = prod.nome + ' — Goody Garden';
+      document.getElementById('breadcrumb').innerHTML = `<a href="index.html">Home</a><span>/</span><a href="loja.html">Loja</a><span>/</span><span>${prod.nome}</span>`;
+
+      let qtd = 1;
+      const fav = isFavorito(prod.id);
+      const catNome = getCategorias().find(c=>c.id===prod.categoria)?.nome || prod.categoria;
+      const parcela = (prod.preco / 3).toFixed(2).replace('.',',');
+
+      document.getElementById('prodWrapper').innerHTML = `
+        <div class="prod-visual">
+          <div class="prod-img-main" style="background:${prod.bg}" id="imgMain">${prod.emoji}</div>
+          <div class="prod-thumbs">
+            <div class="prod-thumb ativo">${prod.emoji}</div>
+            <div class="prod-thumb">🌿</div>
+            <div class="prod-thumb">📦</div>
+          </div>
+        </div>
+        <div class="prod-detalhe">
+          <div class="prod-cat">${catNome}</div>
+          <h1>${prod.nome}</h1>
+          <div class="prod-aval-row">
+            <span class="aval-estrelas">${strEstrelas(prod.avaliacao)}</span>
+            <span class="aval-num">${prod.avaliacao} (${prod.avaliacoes} avaliações)</span>
+          </div>
+          <div class="prod-preco-bloco">
+            ${prod.preco_de ? `<div class="prod-preco-de">${formatPreco(prod.preco_de)}</div>` : ''}
+            <div class="prod-preco-por">${formatPreco(prod.preco)}</div>
+            <div class="prod-parcela">ou 3x de R$ ${parcela} sem juros</div>
+          </div>
+          <div class="prod-estoque"><span class="estoque-dot"></span>${prod.estoque} unidades disponíveis</div>
+          <div class="qtd-row">
+            <span style="font-size:.85rem;font-weight:600;color:var(--texto)">Quantidade:</span>
+            <div class="qtd-ctrl">
+              <button class="qtd-btn" onclick="changeQtd(-1)">−</button>
+              <span class="qtd-val" id="qtdVal">1</span>
+              <button class="qtd-btn" onclick="changeQtd(1)">+</button>
+            </div>
+          </div>
+          <div class="prod-ctas">
+            <button class="btn-primary btn-full" onclick="addAoCarrinho()">🛒 Adicionar ao carrinho</button>
+            <button class="btn-amarelo btn-full" onclick="comprarAgora()">⚡ Comprar agora</button>
+            <button class="btn-secondary btn-full ${fav?'':''}'" id="btnFav" onclick="toggleFav()">
+              ${fav?'❤️ Salvo nos favoritos':'🤍 Salvar nos favoritos'}
+            </button>
+          </div>
+          <div class="prod-info-tabs">
+            <div class="tabs-nav">
+              <button class="tab-btn ativo" onclick="showTab('desc',this)">Descrição</button>
+              <button class="tab-btn" onclick="showTab('cuidados',this)">Cuidados</button>
+              <button class="tab-btn" onclick="showTab('frete',this)">Entrega</button>
+            </div>
+            <div id="tab-desc" class="tab-content">${prod.descricao}</div>
+            <div id="tab-cuidados" class="tab-content hidden">
+              ${prod.cuidados.split('•').filter(Boolean).map(c=>`<div class="cuidados-item">🌿 ${c.trim()}</div>`).join('')}
+            </div>
+            <div id="tab-frete" class="tab-content hidden">
+              <div class="cuidados-item">🚚 Frete grátis em pedidos acima de R$150</div>
+              <div class="cuidados-item">📦 Entrega em 2-5 dias úteis</div>
+              <div class="cuidados-item">🌱 Garantia de chegada saudável</div>
+              <div class="cuidados-item">🔄 Troca em até 7 dias</div>
+            </div>
+          </div>
+        </div>`;
+
+      function changeQtd(v) { qtd = Math.max(1, Math.min(prod.estoque, qtd+v)); document.getElementById('qtdVal').textContent = qtd; }
+      function addAoCarrinho() { addCarrinho(prod.id, qtd); }
+      function comprarAgora() { addCarrinho(prod.id, qtd); window.location.href='carrinho.html'; }
+      function toggleFav() {
+        const ativo = toggleFavorito(prod.id);
+        document.getElementById('btnFav').innerHTML = ativo ? '❤️ Salvo nos favoritos' : '🤍 Salvar nos favoritos';
+      }
+      function showTab(id, btn) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('ativo'));
+        document.getElementById('tab-'+id).classList.remove('hidden');
+        btn.classList.add('ativo');
+      }
+      window.changeQtd = changeQtd; window.addAoCarrinho = addAoCarrinho;
+      window.comprarAgora = comprarAgora; window.toggleFav = toggleFav; window.showTab = showTab;
+    }
+
+    // Relacionados
+    const rel = getProdutos().filter(p => p.id !== id).slice(0,4);
+    document.getElementById('gridRel').innerHTML = rel.map(p => renderCard(p)).join('');
+  </script>
+</body>
+</html>
